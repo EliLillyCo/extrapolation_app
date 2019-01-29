@@ -165,10 +165,16 @@ shinyServer(function(input,output,clientData, session){
         mu0 <- input$prior_power_mean
         sigma0 <- input$prior_power_sd
         a0 <- input$prior_power_a0
+        p0 <- input$prior_mix_weight1
+        mu0_mix <- c(0,input$prior_mix_mean1)
+        mu1_mix <- c(0,input$prior_mix_mean2)
+        sigma0_mix <- c(100,input$prior_mix_sd1)
+        sigma1_mix <- c(100,input$prior_mix_sd2)
         lapply(sms,function(x)
             list("flat"=fit_flat(x,n,eoi,prth,lower.tail=FALSE)[2],
                  "inf"=fit_inf(x,n,eoi,prth,mu0,sigma0,lower.tail=FALSE)[2],
-                 "power"=fit_power(a0,x,n,eoi,prth,mu0,sigma0,lower.tail=FALSE)[2]
+                 "power"=fit_power(a0,x,n,eoi,prth,mu0,sigma0,lower.tail=FALSE)[2],
+                 "mix"=fit_mix(p0,x,n,eoi,prth,mu0_mix,sigma0_mix,mu1_mix,sigma1_mix,lower.tail=FALSE)[2]
                  )
             )
         
@@ -183,10 +189,16 @@ shinyServer(function(input,output,clientData, session){
         mu0 <- input$prior_power_mean
         sigma0 <- input$prior_power_sd
         a0 <- input$prior_power_a0
+        p0 <- input$prior_mix_weight1
+        mu0_mix <- c(0,input$prior_mix_mean1)
+        mu1_mix <- c(0,input$prior_mix_mean2)
+        sigma0_mix <- c(100,input$prior_mix_sd1)
+        sigma1_mix <- c(100,input$prior_mix_sd2)
         lapply(sms,function(x)
             list("flat"=fit_flat(x,n,eoi,prth,lower.tail=FALSE)[2],
                  "inf"=fit_inf(x,n,eoi,prth,mu0,sigma0,lower.tail=FALSE)[2],
-                 "power"=fit_power(a0,x,n,eoi,prth,mu0,sigma0,lower.tail=FALSE)[2]
+                 "power"=fit_power(a0,x,n,eoi,prth,mu0,sigma0,lower.tail=FALSE)[2],
+                 "mix"=fit_mix(p0,x,n,eoi,prth,mu0_mix,sigma0_mix,mu1_mix,sigma1_mix,lower.tail=FALSE)[2]
                  )
             )
         
@@ -197,21 +209,22 @@ shinyServer(function(input,output,clientData, session){
         scenarios <- hot_to_r(input$hot_scenarios)
         scen_names <- scenarios$ScenarioName        
         df <- data.frame("prcsf"=as.numeric(unlist(prb)),
-                         "scenario"=as.character(rep(scen_names,each=3)),
-                         "prior"=as.character(rep(c("flat","informative","power"),length(scen_names))))
+                         "scenario"=as.character(rep(scen_names,each=4)),
+                         "prior"=as.character(rep(c("flat","informative","power","mix"),
+                                                  length(scen_names))))
         df
     })
 
 
     
-    prbs_df <- reactive({
+    prbs_df_grid<- reactive({
         prb <- prbs_grid()
         scen_names <- seq(input$base_mn_trt_lb,
                    input$base_mn_trt_ub,
                    input$base_mn_trt_by)
         df <- data.frame("prcsf"=as.numeric(unlist(prb)),
-                         "scenario"=as.numeric(rep(scen_names,each=3)),
-                         "prior"=as.character(rep(c("flat","informative","power"),
+                         "scenario"=as.numeric(rep(scen_names,each=4)),
+                         "prior"=as.character(rep(c("flat","informative","power", "mix"),
                                                   length(scen_names))))
         df
     })
@@ -225,7 +238,7 @@ shinyServer(function(input,output,clientData, session){
     })
 
     output$power_plot_grid <- renderPlotly({
-        df <-  prbs_df()
+        df <-  prbs_df_grid()
         ggplot(data = df, aes(x = scenario, y = prcsf,colour=prior)) +
             geom_point()+geom_line()        
     })
