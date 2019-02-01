@@ -36,6 +36,8 @@
 ## 
 ### Libraries:
 library(shiny)
+library(ggplot2)
+library(plotly)
 library(shinydashboard)
 library(rhandsontable)
 
@@ -98,7 +100,8 @@ dashboardPage(
                 ),
                 fluidRow(
                     box(tabName="Power Priors",
-                        numericInput("prior_power_a0","Power Prior Discounting Parameter (a0)",
+                        numericInput("prior_power_a0",
+                                     "Power Prior Discounting Parameter (a0)",
                                      value=0.5,min=0.0,max=1.0,step=0.1),
                         numericInput("prior_power_mean","Power Prior Mean",
                                      value=0.5,step=0.1),
@@ -134,7 +137,23 @@ dashboardPage(
                         numericInput("sim_n",label="Number of Simulations",value=100,step=1),
                         actionButton("sim_go",label="Run Simulations!")
                     )
+                ),
+                fluidRow(
+                    box(plotlyOutput("power_plot"))
+                ),
+                fluidRow(
+                    box(numericInput("base_mn_control",label="Mean Control Group",value=0.0,step=0.1),
+                        numericInput("base_sd_control",label="SD Control Group", value=1.0,step=0.1),
+                        numericInput("base_sd_trt",label="SD Treatment Group", value=1.0,step=0.1),
+                    numericInput("base_mn_trt_lb",label="Lower Bound of Mean Treatment Group",
+                                 value=0.0,step=0.1),
+                    numericInput("base_mn_trt_ub",label="Upper Bound of Mean Treatment Group",
+                                 value=3.0,step=0.1),
+                    numericInput("base_mn_trt_by",label="Step Size of Mean Treatment Group",
+                                 value=0.1,step=0.1)),
+                    box(plotlyOutput("power_plot_grid"))
                 )
+                
             )
         )
     ),title=''

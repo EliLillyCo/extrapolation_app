@@ -135,7 +135,32 @@ fit_power <- function(a0,sims,n,eoi,prth,mu0,sigma0,lower.tail=FALSE){
 
 marginal <- function(ybar,s2,mu0,sigma0,n,sigma){
     Sigma <- diag(c(rep(sigma[1]^2,n[1]),rep(sigma[2]^2,n[2])))
-    Sigma0 <- diag(sigma0)
+    Sigmai <- diag(c(rep(1.0/sigma[1]^2,n[1]),rep(1.0/sigma[2]^2,n[2])))
+    Sigma0 <- diag(sigma0*sigma0)
+    Sigma0i <- diag(1/(sigma0*sigma0))
+    X <- cbind(1,c(rep(0,n[1]),rep(1,n[2])))
+    
+    betahat <- c(ybar[1],ybar[2]-ybar[1])
+    Xbetahat <- X%*%betahat
+    log_ll <- -(sum(n)/2.0)*log(2*pi) +
+        0.5*log(det(t(X)%*%Sigmai%*%X+Sigma0i))-
+        0.5*(n[1]*2*log(sigma[1])+n[2]*2*log(sigma[2]))-
+        0.5*(log(sigma0[1])+log(sigma0[2]))
+    
+    log_ll <- log_ll-0.5*(n[1]-1)*s2[1]/sigma[1]+(n[2]-1)*s2[2]/sigma[2]
+    log_ll <- log_ll-0.5*t(mu0)%*%Sigma0i%*%mu0
+    log_ll <- log_ll-0.5*t(Xbetahat)%*%Sigmai%*%X%*%betahat
+    log_ll <- log_ll+0.5*t(Sigma0i%*%mu0+t(X)%*%Sigmai%*%Xbetahat
+                           )%*%solve(t(X)%*%Sigmai%*%X+Sigma0i
+        )%*%(Sigma0i%*%mu0+t(X)%*%Sigmai%*%Xbetahat)
+    exp(log_ll)
+}
+
+
+
+marginal2 <- function(ybar,s2,mu0,sigma0,n,sigma){
+    Sigma <- diag(c(rep(sigma[1]^2,n[1]),rep(sigma[2]^2,n[2])))
+    Sigma0 <- diag(sigma0*sigma0)
     X <- cbind(1,c(rep(0,n[1]),rep(1,n[2])))
     
     betahat <- c(ybar[1],ybar[2]-ybar[1])
@@ -234,7 +259,9 @@ main <- function(){
     sigma1 <- c(5,5)
     n <- c(100,120)
     sigma <- c(4,4)
-    marginal(ybar,s2,mu0,sigma0,n,sigma)
+    system.time(marginal(ybar,s2,mu0,sigma0,n,sigma))
+    system.time(marginal2(ybar,s2,mu0,sigma0,n,sigma))
+    
     marginal(ybar,s2,c(1,10),sigma0,n,sigma)
     
     n <- c(100,120)
