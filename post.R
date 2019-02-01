@@ -214,13 +214,13 @@ fit_mix <- function(p0,sims,n,eoi,prth,
     post_var <- cbind(1.0/(1.0/sigma0[2]^2+n[2]/(2.0*s2[,2])),
                       1.0/(1.0/sigma1[2]^2+n[2]/(2.0*s2[,2])))
 
-    post_mn <- cbind(post_var[,1]*((1.0/sigma0[1]^2)*mu0[2] +
+    post_mn <- cbind(post_var[,1]*((1.0/sigma0[2]^2)*mu0[2] +
                                     (n[2]/(2.0*s2[,2]))*ybar[,2]),
-                      post_var[,1]*((1.0/sigma1[1]^2)*mu1[2] +
+                      post_var[,2]*((1.0/sigma1[2]^2)*mu1[2] +
                                     (n[2]/(2.0*s2[,2]))*ybar[,2]))
 
     prb <- p[,1]*pnorm(eoi,post_mn[,1],sqrt(post_var[,1]),lower.tail=lower.tail)+
-        p[,2]*pnorm(eoi,post_mn[,2],sqrt(post_var[,2]),lower.tail=lower.tail)
+           p[,2]*pnorm(eoi,post_mn[,2],sqrt(post_var[,2]),lower.tail=lower.tail)
     
     c(mean(prb),mean(prb>prth))
 }
@@ -240,17 +240,22 @@ main <- function(){
 
     eoi <- 2.0
     prth <- 0.9
-    fit_flat(sims,n,eoi,prth)
     fit_inf(sims,n,eoi,prth,0.0,1.0)
     fit_inf(sims,n,eoi,prth,0.0,1000.0)
     fit_power(0.001,sims,n,eoi,prth,0.0,1.0)
     fit_power(1.0,sims,n,eoi,prth,0.0,1.0)
     mu0 <- c(0,0)
     mu1 <- c(0,4)
-    sigma0 <- c(1,1)
-    sigma1 <- c(1,4)
-    fit_mix(0.2,sims,n,eoi,prth,mu0,sigma0,mu1,sigma1)
+    sigma0 <- c(100,10)
+    sigma1 <- c(100,1)
 
+    fit_flat(sims,n,eoi,prth)
+    fit_mix(0.5,sims,n,eoi,prth,mu0,sigma0,mu1,sigma1)
+    fit_inf(sims,n,eoi,prth,0.0,10.0)
+    fit_inf(sims,n,eoi,prth,4.0,1.0)
+    
+    
+    
     ybar <- c(1,10)
     s2 <- c(4,4)
     mu0 <- c(0,0)
