@@ -56,7 +56,7 @@
 simulate_studies <- function(n_sims,mu,sigma,n){
     sims_ybar <- t(matrix(rnorm(n_sims*2,mu,sigma/sqrt(n)),
                           nrow=2))
-    sims_s2 <- t(matrix(rchisq(n_sims*2,n-1),nrow=2)*sigma/(n-1))
+    sims_s2 <- t(matrix(rchisq(n_sims*2,n-1),nrow=2)*sigma*sigma/(n-1))
     list(sims_ybar=sims_ybar, sims_s2=sims_s2)
 }
 
@@ -74,8 +74,8 @@ simulate_studies <- function(n_sims,mu,sigma,n){
 fit_flat <- function(sims,n,eoi,prth,lower.tail=FALSE){
     mn <- sims$sims_ybar[,2]-sims$sims_ybar[,1]
     se <- sqrt((2.0/n[2])*sims$sims_s2[,2])
-    c(mean(pnorm(eoi,mn,se,lower.tail=lower.tail)),
-      mean(pnorm(eoi,mn,se,lower.tail=lower.tail)> prth))
+    c(mean(1-pnorm(eoi,mn,se,lower.tail=lower.tail)),
+      mean((1-pnorm(eoi,mn,se,lower.tail=lower.tail))> prth))
 }
 
 #' Fit a Bayesian model with an informative prior. Returns the average
@@ -98,8 +98,8 @@ fit_inf <- function(sims,n,eoi,prth,mu0,sigma0,lower.tail=FALSE){
         (1.0/sigma0^2)*mu0 + (n[2]/(2.0*se*se))*mn
     )
     post_se <- sqrt(post_var)
-    c(mean(pnorm(eoi,post_mn,post_se,lower.tail=lower.tail)),
-      mean(pnorm(eoi,post_mn,post_se,lower.tail=lower.tail)> prth))
+    c(mean(1-pnorm(eoi,post_mn,post_se,lower.tail=lower.tail)),
+      mean((1-pnorm(eoi,post_mn,post_se,lower.tail=lower.tail))> prth))
 }
 
 #' Fit a Bayesian model with a power prior. Returns the average
@@ -128,12 +128,12 @@ fit_power <- function(a0,sims,n,eoi,prth,mu0,sigma0,lower.tail=FALSE){
             (1.0/sigma0^2)*mu0 + (n[2]/(2.0*se*se))*mn
         )
         post_se <- sqrt(post_var)
-        c(mean(pnorm(eoi,post_mn,post_se,lower.tail=lower.tail)),
-          mean(pnorm(eoi,post_mn,post_se,lower.tail=lower.tail)> prth))
+        c(1-mean(pnorm(eoi,post_mn,post_se,lower.tail=lower.tail)),
+          mean((1-pnorm(eoi,post_mn,post_se,lower.tail=lower.tail))> prth))
     }
 }
 
-marginal <- function(ybar,s2,mu0,sigma0,n,sigma){
+marginal <- function(ybar,s2,mu0,sigma0,n,sigma,log=FALSE){
     Sigma <- diag(c(rep(sigma[1]^2,n[1]),rep(sigma[2]^2,n[2])))
     Sigmai <- diag(c(rep(1.0/sigma[1]^2,n[1]),rep(1.0/sigma[2]^2,n[2])))
     Sigma0 <- diag(sigma0*sigma0)
@@ -141,19 +141,29 @@ marginal <- function(ybar,s2,mu0,sigma0,n,sigma){
     X <- cbind(1,c(rep(0,n[1]),rep(1,n[2])))
     
     betahat <- c(ybar[1],ybar[2]-ybar[1])
-    Xbetahat <- X%*%betahat
+    Xbetahat <- c(rep(ybar[1],n[1]),rep(ybar[2],n[2]))
+    ##Xbetahat2 <- X%*%betahat
+    ##mean(Xbetahat==Xbetahat2)
+    ##XtSigmaiX <- t(X)%*%Sigmai%*%X
+    XtSigmaiX <- matrix(c(
+        n[2]/sigma[2]^2+n[1]/sigma[1]^2,
+        rep(n[2]/sigma[2]^2,3)),2,2)
+        
     log_ll <- -(sum(n)/2.0)*log(2*pi) +
-        0.5*log(det(t(X)%*%Sigmai%*%X+Sigma0i))-
+        0.5*log(det(XtSigmaiX+Sigma0i))-
         0.5*(n[1]*2*log(sigma[1])+n[2]*2*log(sigma[2]))-
         0.5*(log(sigma0[1])+log(sigma0[2]))
     
-    log_ll <- log_ll-0.5*(n[1]-1)*s2[1]/sigma[1]+(n[2]-1)*s2[2]/sigma[2]
+    log_ll <- log_ll-0.5*(n[1]-1)*s2[1]/sigma[1]^2+(n[2]-1)*s2[2]/sigma[2]^2
     log_ll <- log_ll-0.5*t(mu0)%*%Sigma0i%*%mu0
-    log_ll <- log_ll-0.5*t(Xbetahat)%*%Sigmai%*%X%*%betahat
+    log_ll <- log_ll-0.5*t(Xbetahat)%*%Sigmai%*%Xbetahat
     log_ll <- log_ll+0.5*t(Sigma0i%*%mu0+t(X)%*%Sigmai%*%Xbetahat
-                           )%*%solve(t(X)%*%Sigmai%*%X+Sigma0i
-        )%*%(Sigma0i%*%mu0+t(X)%*%Sigmai%*%Xbetahat)
-    exp(log_ll)
+                           )%*%solve(XtSigmaiX+Sigma0i
+                                     )%*%(Sigma0i%*%mu0+t(X)%*%Sigmai%*%Xbetahat)
+    if(log)
+        return(log_ll)
+    else
+        return(exp(log_ll))
 }
 
 
@@ -198,15 +208,20 @@ fit_mix <- function(p0,sims,n,eoi,prth,
     if(length(p0)==1)
         p0 <- c(p0,1-p0)
     
-    ybar <- cbind(sims$sims_ybar[,1],sims$sims_ybar[,2]-sims$sims_ybar[,1])
+    ybar <- cbind(sims$sims_ybar[,1],sims$sims_ybar[,2])
     s2 <- cbind(sims$sims_s2[,1],sims$sims_s2[,2])
 
     
     m0 <- sapply(1:dim(ybar)[1],
-                 function(x) marginal(ybar[x,],s2[x,],mu0,sigma0,n,sigma=s2))
+                 function(x) marginal(ybar[x,],s2[x,],mu0,sigma0,n,sigma=sqrt(s2[x,]),log=TRUE))
     m1 <- sapply(1:dim(ybar)[1],
-                 function(x) marginal(ybar[x,],s2[x,],mu1,sigma1,n,sigma=s2))
-
+                 function(x) marginal(ybar[x,],s2[x,],mu1,sigma1,n,sigma=sqrt(s2[x,]),log=TRUE))
+    ##need to add largest for each.
+    max_m <- apply(cbind(m0,m1),1,max)
+    m0 <- exp(m0-max_m)
+    m1 <- exp(m1-max_m)
+        
+    ybar <- cbind(sims$sims_ybar[,1],sims$sims_ybar[,2]-sims$sims_ybar[,1]) ##marginal does the conversion
     p <- p0[1]*m0/(p0[1]*m0+p0[2]*m1)
     p <- cbind(p,1-p)
 
@@ -215,13 +230,17 @@ fit_mix <- function(p0,sims,n,eoi,prth,
                       1.0/(1.0/sigma1[2]^2+n[2]/(2.0*s2[,2])))
 
     post_mn <- cbind(post_var[,1]*((1.0/sigma0[2]^2)*mu0[2] +
-                                    (n[2]/(2.0*s2[,2]))*ybar[,2]),
-                      post_var[,2]*((1.0/sigma1[2]^2)*mu1[2] +
-                                    (n[2]/(2.0*s2[,2]))*ybar[,2]))
+                                   (n[2]/(2.0*s2[,2]))*ybar[,2]),
+                     post_var[,2]*((1.0/sigma1[2]^2)*mu1[2] +
+                                   (n[2]/(2.0*s2[,2]))*ybar[,2]))
 
-    prb <- p[,1]*pnorm(eoi,post_mn[,1],sqrt(post_var[,1]),lower.tail=lower.tail)+
-           p[,2]*pnorm(eoi,post_mn[,2],sqrt(post_var[,2]),lower.tail=lower.tail)
-    
+    prb1 <- 1-pnorm(eoi,post_mn[,1],sqrt(post_var[,1]),
+                    lower.tail=lower.tail)
+    prb2 <- 1-pnorm(eoi,post_mn[,2],sqrt(post_var[,2]),
+                          lower.tail=lower.tail)
+    prb <- p[,1]*(prb1)+
+           p[,2]*(prb2)
+    ##c(mean(prb1>prth),mean(prb2>prth),mean(prb>prth))
     c(mean(prb),mean(prb>prth))
 }
 
@@ -232,25 +251,47 @@ fit_mix <- function(p0,sims,n,eoi,prth,
 #' 
 main <- function(){
     n_sims <- 1000
-    mu <- c(-1.0,1.0)
-    sigma <- 2.0
-    n <- c(100,100)
+    mu <- c(0.0,-1.0)
+    sigma <- 6.0
+    n <- c(150,150)
     p0 <- .5
     sims <- simulate_studies(n_sims,mu,sigma,n)
 
-    eoi <- 2.0
-    prth <- 0.9
-    fit_inf(sims,n,eoi,prth,0.0,1.0)
+    eoi <- 0
+    prth <- 0.95
+    fit_inf(sims,n,eoi,prth,-1.97,1.0)
     fit_inf(sims,n,eoi,prth,0.0,1000.0)
     fit_power(0.001,sims,n,eoi,prth,0.0,1.0)
     fit_power(1.0,sims,n,eoi,prth,0.0,1.0)
     mu0 <- c(0,0)
-    mu1 <- c(0,4)
-    sigma0 <- c(100,10)
-    sigma1 <- c(100,1)
+    mu1 <- c(0,-1.97)
+    sigma0 <- c(100,1)
+    sigma1 <- c(100,.33)
 
     fit_flat(sims,n,eoi,prth)
+    fit_inf(sims,n,eoi,prth,mu0[2],sigma0[2])
+    fit_inf(sims,n,eoi,prth,mu1[2],sigma1[2])
+
+    fit_mix(0.25,sims,n,eoi,prth,mu0,sigma0,mu1,sigma1)
     fit_mix(0.5,sims,n,eoi,prth,mu0,sigma0,mu1,sigma1)
+    system.time(fit_mix(0.75,sims,n,eoi,prth,mu0,sigma0,mu1,sigma1))
+##   user  system elapsed 
+##  2.099   0.284   2.383
+
+
+    ##jondavid example
+    
+    sims <- simulate_studies(n_sims=1000,mu=c(0,-0.5),sigma=c(3,3),n=c(150,150))
+    fit_mix(0.5,
+            sims,n=c(150,150),
+            eoi=0,prth=0.975,
+            mu0=c(0,0),
+            sigma0=c(100,10),
+            mu1=c(0,-1.97),
+            sigma1=c(100,0.33))
+    
+    fit_flat(sims,n=c(150,150),eoi=0,prth=0.975)
+    
     fit_inf(sims,n,eoi,prth,0.0,10.0)
     fit_inf(sims,n,eoi,prth,4.0,1.0)
     
@@ -266,8 +307,10 @@ main <- function(){
     sigma <- c(4,4)
     system.time(marginal(ybar,s2,mu0,sigma0,n,sigma))
     system.time(marginal2(ybar,s2,mu0,sigma0,n,sigma))
-    
-    marginal(ybar,s2,c(1,10),sigma0,n,sigma)
+    ybar <- c(0,-4)
+    s2 <- c(3,3)
+    marginal(ybar,s2,mu0,sigma0,n,sigma,log=TRUE)
+    marginal(ybar,s2,mu0,sigma0,n,sigma,log=TRUE)
     
     n <- c(100,120)
     X <- cbind(1,c(rep(0,n[1]),rep(1,n[2])))

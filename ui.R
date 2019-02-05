@@ -40,6 +40,7 @@ library(ggplot2)
 library(plotly)
 library(shinydashboard)
 library(rhandsontable)
+library(grid)
 
 ## 
 ### Global Functions: 
@@ -53,13 +54,12 @@ options(shiny.sanitize.errors=FALSE) ##informative error messages
 
 dashboardPage(
     dashboardHeader(
-        title="Trial Simulator"
+        title="TrialSimulator"
     ),
     dashboardSidebar(
         sidebarMenu(
-            menuItem("Scenarios", tabName="tab_scenarios"),
+            menuItem("Scenarios and Design", tabName="tab_scenarios"),
             menuItem("Priors", tabName="tab_priors"),
-            menuItem("Design", tabName="tab_design"),
             menuItem("Simulations", tabName="tab_simulations")
         )
     ),
@@ -67,12 +67,35 @@ dashboardPage(
         tabItems(
             tabItem(tabName="tab_scenarios",
                 fluidRow(
-                    box(title="Scenarios",rHandsontableOutput("hot_scenarios"))
+                    box(tabName="Design",title="Sample Sizes",solidHeader=TRUE,
+                        collapsible=TRUE,status="primary",
+                        numericInput("design_n_control","Sample Size for Control",
+                                     value=150,min=0,max=10000,step=1),
+                        numericInput("design_n_trt","Sample Size for TRT",
+                                     value=150,min=0,max=10000,step=1)
+                    ),
+                    box(tabName="Success Criterion",title="Success Criterion",
+                        solidHeader=TRUE,
+                        collapsible=TRUE,status="primary",
+                        "P(TRT-Control<EOI)>PRTH)",
+                        numericInput("design_csf_eoi", "EOI",
+                                     value=0.0,step=0.1),
+                        numericInput("design_csf_prth", "PRTH",
+                                     value=0.975,min=0.0,max=1.0,step=0.01),
+                        uiOutput("design_csf")
+                    )
+                ),
+                fluidRow(
+                    box(title="Scenarios",rHandsontableOutput("hot_scenarios"),
+                        solidHeader=TRUE,
+                        collapsible=TRUE,status="primary")
                 )
+
             ),
             tabItem(tabName="tab_priors",
                 fluidRow(
-                    box(title="Two Component Mixture Prior",
+                    box(title="Two Component Mixture Prior",solidHeader=TRUE,
+                        collapsible=TRUE,status="primary",
                         fluidRow(
                             column(6,numericInput("prior_mix_weight1",
                                                   "Mixture Prior Weight",
@@ -85,7 +108,7 @@ dashboardPage(
                                               value=0.0,step=0.1)),
                         column(6,numericInput("prior_mix_mean2",
                                               "Mixture Prior Mean of Informative",
-                                              value=1.5,step=0.1))
+                                              value=-2.0,step=0.1))
                         ),
                         fluidRow(
                         column(6,numericInput("prior_mix_sd1",
@@ -93,65 +116,90 @@ dashboardPage(
                                               value=1.0,min=0.0,step=0.1)),
                         column(6,numericInput("prior_mix_sd2",
                                               "Mixture Prior SD of Informative",
-                                              value=3.0,min=0.0,step=0.1))
+                                              value=0.275,min=0.0,step=0.1))
                         )
                     ),
-                    box(plotOutput("prior_mix_plot"))
+                    box(plotOutput("prior_mix_plot"),
+                        title="Desity Plot",solidHeader=TRUE,
+                        collapsible=TRUE,status="primary")
                 ),
                 fluidRow(
-                    box(tabName="Power Priors",
+                    box(tabName="Power Priors",title="Power Prior",
+                        solidHeader=TRUE,
+                        collapsible=TRUE,status="primary",
                         numericInput("prior_power_a0",
                                      "Power Prior Discounting Parameter (a0)",
                                      value=0.5,min=0.0,max=1.0,step=0.1),
                         numericInput("prior_power_mean","Power Prior Mean",
-                                     value=0.5,step=0.1),
+                                     value=-1.97,step=0.1,min=-1000,max=1000),
                         numericInput("prior_power_sd", ## add plot without discount
                                      "Power Prior Standard Deviation",
-                                     value=0.5,min=0.0,step=0.1)
+                                     value=0.275,min=0.0,step=0.1,max=1000)
                     ),
-                    box(plotOutput("prior_power_plot"))
-                )
-            ),
-            tabItem(tabName="tab_design", ## Add Case Examples
+                    box(plotOutput("prior_power_plot"),
+                        title="Desity Plot",solidHeader=TRUE,
+                        collapsible=TRUE,status="primary")
+                ),
+
                 fluidRow(
-                    box(tabName="Design",
-                        numericInput("design_n_control","Sample Size for Control",
-                                     value=100,min=0,step=1),
-                        numericInput("design_n_trt","Sample Size for TRT",
-                                     value=100,min=0,step=1)
-                    ),
-                    box(tabName="Success Criterion",
-                        "P(TRT-Control>EOI)>PRTH)",
-                        numericInput("design_csf_eoi", "EOI",
-                                     value=0.0,step=0.1),
-                        numericInput("design_csf_prth", "PRTH",
-                                     value=0.8,min=0.0,max=1.0,step=0.01),
-                        uiOutput("design_csf")
+                    box(tabName="Hypothetical Data",title="Example Observed Data",
+                        solidHeader=TRUE,
+                        collapsible=TRUE,status="primary",
+                        numericInput("obs_control_mean",
+                                     label="Observed Control Mean",value=0.0,
+                                     step=0.1,min=-100,max=100),
+                        numericInput("obs_control_sd",
+                                     label="Observed Control SD",value=3.5,
+                                     step=0.1,
+                                     min=0, max=1000),
+                        numericInput("obs_trt_mean",
+                                     label="Observed TRT Mean",
+                                     value=-2.0,step=0.1,min=-100,max=100),
+                        numericInput("obs_trt_sd",label="Observed TRT SD",
+                                     value=3.5,step=0.1,min=0,max=1000)
+                        
+                        ),
+                    box(
+                        plotlyOutput("prior2post_mix"),
+                        title="Prior to Posterior Plots",solidHeader=TRUE,
+                        collapsible=TRUE,status="primary"
                     )
+                    
                 )
+
             ),
             tabItem(tabName="tab_simulations",
                 fluidRow(
-                    box(tabName="Simulation Settings",
+                    box(tabName="Simulation Settings",solidHeader=TRUE,
+                        collapsible=TRUE,status="primary",title="Simulation Setting",
                         numericInput("sim_seed",label="R random number seed",value=4212,step=1),
                         numericInput("sim_n",label="Number of Simulations",value=100,step=1),
                         actionButton("sim_go",label="Run Simulations!")
-                    )
+                    ),
+                    box(plotlyOutput("power_plot"),title="Power By Scenario",solidHeader=TRUE,
+                        collapsible=TRUE,status="primary")
                 ),
                 fluidRow(
-                    box(plotlyOutput("power_plot"))
-                ),
-                fluidRow(
-                    box(numericInput("base_mn_control",label="Mean Control Group",value=0.0,step=0.1),
-                        numericInput("base_sd_control",label="SD Control Group", value=1.0,step=0.1),
-                        numericInput("base_sd_trt",label="SD Treatment Group", value=1.0,step=0.1),
-                    numericInput("base_mn_trt_lb",label="Lower Bound of Mean Treatment Group",
-                                 value=0.0,step=0.1),
-                    numericInput("base_mn_trt_ub",label="Upper Bound of Mean Treatment Group",
-                                 value=3.0,step=0.1),
-                    numericInput("base_mn_trt_by",label="Step Size of Mean Treatment Group",
-                                 value=0.1,step=0.1)),
-                    box(plotlyOutput("power_plot_grid"))
+                    box(numericInput("base_mn_control",
+                                     label="Mean Control Group",value=0.0,step=0.1,
+                                     min=-1000,max=1000),
+                        numericInput("base_sd_control",label="SD Control Group",
+                                     value=1.0,step=0.1,min=-1000,max=1000),
+                        numericInput("base_sd_trt",label="SD Treatment Group",
+                                     value=1.0,step=0.1,min=-1000,max=1000),
+                        numericInput("base_mn_trt_lb",
+                                     label="Lower Bound of Mean Treatment Group",
+                                     value=-3.0,step=0.1,min=-1000,max=1000),
+                        numericInput("base_mn_trt_ub",
+                                     label="Upper Bound of Mean Treatment Group",
+                                 value=0.0,step=0.1,min=-1000,max=1000),
+                        numericInput("base_mn_trt_by",
+                                     label="Step Size of Mean Treatment Group",
+                                     value=0.1,step=0.1,min=-1000,max=1000),
+                        title="Power Curve Settings",solidHeader=TRUE,
+                        collapsible=TRUE,status="primary"),
+                    box(plotlyOutput("power_plot_grid"),title="Power Curve",solidHeader=TRUE,
+                        collapsible=TRUE,status="primary")
                 )
                 
             )
