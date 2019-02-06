@@ -42,6 +42,9 @@ library(htmlwidgets)
 ### Global Functions: 
 source("post.R")
 
+### global variables
+n_cores <- 6
+
 
 ## 
 ### Code: 
@@ -146,7 +149,7 @@ shinyServer(function(input,output,clientData, session){
                                   gp=gpar(col="black", fontsize=13,
                                           fontface="italic")))
         
-        ggplot(xvalues,aes(x=xvalues))+
+        ggplot(xvalues,aes(x=x))+
             stat_function(fun=dnorm_c, geom="area",
                           aes(fill="MixturePrior"),alpha=.3)+
             stat_function(fun=dnorm_pc, geom="area",
@@ -183,7 +186,7 @@ shinyServer(function(input,output,clientData, session){
         grob <- grobTree(textGrob(txt, x=0.6,y=0.95, hjust=0,
   gp=gpar(col="black", fontsize=13, fontface="italic")))
         
-        ggplot(xvalues,aes(x=xvalues))+
+        ggplot(xvalues,aes(x=x))+
             stat_function(fun=dnorm_c, geom="area",fill="turquoise",alpha=.3)+
             xlim(c(min(mn1-4*sd1,mn2-4*sd2),max(mn2+4*sd2,mn1+4*sd1)))+
             ##geom_vline(xintercept=input$eoi1,colour="red")+
@@ -203,7 +206,7 @@ shinyServer(function(input,output,clientData, session){
         grob <- grobTree(textGrob(txt, x=0.6,y=0.95, hjust=0,
   gp=gpar(col="black", fontsize=13, fontface="italic")))
         
-        ggplot(xvalues,aes(x=xvalues))+
+        ggplot(xvalues,aes(x=x))+
             stat_function(fun=dnorm_c, geom="area",fill="orange",alpha=.3)+
             xlim(c(min(mn-11*sd,mn-11*sd),max(mn+11*sd,mn+11*sd)))+
             ##geom_vline(xintercept=input$eoi1,colour="red")+
@@ -224,12 +227,13 @@ shinyServer(function(input,output,clientData, session){
         if(!is.null(hot)){
             scenarios <- hot_to_r(input$hot_scenarios)
             
-            lapply(1:dim(scenarios)[1],function(x)
+            parallel::mclapply(1:dim(scenarios)[1],function(x)
                 simulate_studies(n_sims,
                                  mu=c(scenarios$ControlMean[x],
                                              scenarios$TRTMean[x]),
                                  sigma=c(scenarios$ControlSD[x],
-                                         scenarios$TRTSD[x]),n))
+                                         scenarios$TRTSD[x]),n),
+                mc.cores = n_cores)
         }else{
             NULL
         }
@@ -247,10 +251,11 @@ shinyServer(function(input,output,clientData, session){
         mn1 <- seq(input$base_mn_trt_lb,
                    input$base_mn_trt_ub,
                    input$base_mn_trt_by)
-        lapply(mn1, function(x)
+        parallel::mclapply(mn1, function(x)
             simulate_studies(n_sims,
                              mu=c(mn0,x),
-                             sigma=c(sd0,sd1),n)
+                             sigma=c(sd0,sd1),n),
+            mc.cores = n_cores
             )
     })
     
@@ -268,13 +273,14 @@ shinyServer(function(input,output,clientData, session){
         mu1_mix <- c(0,input$prior_mix_mean2)
         sigma0_mix <- c(100,input$prior_mix_sd1)
         sigma1_mix <- c(100,input$prior_mix_sd2)
-        lapply(sms,function(x)
+        parallel::mclapply(sms,function(x)
             list("flat"=fit_flat(x,n,eoi,prth,lower.tail=FALSE)[2],
                  "inf"=fit_inf(x,n,eoi,prth,mu0,sigma0,lower.tail=FALSE)[2],
                  "power"=fit_power(a0,x,n,eoi,prth,mu0,sigma0,lower.tail=FALSE)[2],
                  "mix"=fit_mix(p0,x,n,eoi,prth,mu0_mix,sigma0_mix,mu1_mix,
                                sigma1_mix,lower.tail=FALSE)[2]
-                 )
+                 ),
+            mc.cores = n_cores
             )
         
     })
@@ -293,12 +299,13 @@ shinyServer(function(input,output,clientData, session){
         mu1_mix <- c(0,input$prior_mix_mean2)
         sigma0_mix <- c(100,input$prior_mix_sd1)
         sigma1_mix <- c(100,input$prior_mix_sd2)
-        lapply(sms,function(x)
+        parallel::mclapply(sms,function(x)
             list("flat"=fit_flat(x,n,eoi,prth,lower.tail=FALSE)[2],
                  "inf"=fit_inf(x,n,eoi,prth,mu0,sigma0,lower.tail=FALSE)[2],
                  "power"=fit_power(a0,x,n,eoi,prth,mu0,sigma0,lower.tail=FALSE)[2],
                  "mix"=fit_mix(p0,x,n,eoi,prth,mu0_mix,sigma0_mix,mu1_mix,sigma1_mix,lower.tail=FALSE)[2]
-                 )
+                 ),
+            mc.cores = n_cores
             )
         
     })
