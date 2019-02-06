@@ -51,12 +51,12 @@ shinyServer(function(input,output,clientData, session){
     sims <- NULL
     
     output$hot_scenarios <- renderRHandsontable({
-        df <- data.frame("ScenarioName"=c("Null", "Null SD=2", "Expected",
-                                  "Expected SD=2"),
-                         "ControlMean"=c(0.0,0.0,0.0,1.0),
-                         "ControlSD"=c(1.0,2.0,1.0,2.0),
-                         "TRTMean"=c(0.0,0.0,-2.0,-1.0),
-                         "TRTSD"=c(1.0,2.0,1.0,2.0))
+        df <- data.frame("ScenarioName"=c("1.) Null", "2.) OK", "3.) Good",
+                                  "4.) Great"),
+                         "ControlMean"=c( 0.0, 0.0, 0.0, 0.0),
+                         "ControlSD"=  c( 6.0, 6.0, 6.0, 6.0),
+                         "TRTMean"=    c( 0.0, 1.0,-1.5,-2.0),
+                         "TRTSD"=      c( 6.0, 6.0, 6.0, 6.0))
         rhandsontable(df, useTypes=FALSE,height=300*2,
                     search=TRUE) %>%
         hot_table(highlightCol=TRUE,highlightRow=TRUE) %>%
@@ -161,12 +161,12 @@ shinyServer(function(input,output,clientData, session){
                    max(mn2+4*sd2,mn1+4*sd1,
                        post_mn[1]+4*sqrt(post_var[1]),
                        post_mn[2]+4*sqrt(post_var[2]))))+
-            geom_vline(xintercept=ybar[2],colour="red")+
+#            geom_vline(xintercept=ybar[2],colour="red")+
             labs(x="Treatment Difference", y="Density")+
             scale_fill_manual("Distribution",
                               values=c("yellow","turquoise","purple","orange"))+
 ##            annotation_custom(grob)
-        annotate("text",x=0,y=3,label=txt)
+        annotate("text",x=input$pwr_x,y=input$pwr_y,label=txt)
         
     })
 
@@ -332,14 +332,14 @@ shinyServer(function(input,output,clientData, session){
         df <-  prbs_df()
         ggplot(data = df, aes(x = scenario, y = prcsf,colour=prior)) +
             geom_point() +
-            geom_line()
+            geom_line()+labs(x="Treatment Difference",y="power")        
         
     })
 
     output$power_plot_grid <- renderPlotly({
         df <-  prbs_df_grid()
         ggplot(data = df, aes(x = scenario, y = prcsf,colour=prior)) +
-            geom_point()+geom_line()        
+            geom_point()+geom_line()+labs(x="Treatment Difference",y="power")        
     })
     
 })

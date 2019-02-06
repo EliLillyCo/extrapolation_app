@@ -105,22 +105,22 @@ dashboardPage(
                         fluidRow(
                         column(6,numericInput("prior_mix_mean1",
                                               "Mixture Prior Mean of Skeptical",
-                                              value=0.0,step=0.1)),
+                                              value=0.0,step=0.1,min=-100,max=100)),
                         column(6,numericInput("prior_mix_mean2",
                                               "Mixture Prior Mean of Informative",
-                                              value=-2.0,step=0.1))
+                                              value=-2.0,step=0.1,min=-100,max=100))
                         ),
                         fluidRow(
                         column(6,numericInput("prior_mix_sd1",
                                               "Mixture Prior SD of Skeptical",
-                                              value=1.0,min=0.0,step=0.1)),
+                                              value=3.0,min=0.0,step=0.1,max=100)),
                         column(6,numericInput("prior_mix_sd2",
                                               "Mixture Prior SD of Informative",
-                                              value=0.275,min=0.0,step=0.1))
+                                              value=0.275,min=0.0,step=0.1,max=100))
                         )
                     ),
                     box(plotOutput("prior_mix_plot"),
-                        title="Desity Plot",solidHeader=TRUE,
+                        title="Mixture Prior Density Plot",solidHeader=TRUE,
                         collapsible=TRUE,status="primary")
                 ),
                 fluidRow(
@@ -129,7 +129,7 @@ dashboardPage(
                         collapsible=TRUE,status="primary",
                         numericInput("prior_power_a0",
                                      "Power Prior Discounting Parameter (a0)",
-                                     value=0.5,min=0.0,max=1.0,step=0.1),
+                                     value=0.04,min=0.0,max=1.0,step=0.1),
                         numericInput("prior_power_mean","Power Prior Mean",
                                      value=-1.97,step=0.1,min=-1000,max=1000),
                         numericInput("prior_power_sd", ## add plot without discount
@@ -137,7 +137,7 @@ dashboardPage(
                                      value=0.275,min=0.0,step=0.1,max=1000)
                     ),
                     box(plotOutput("prior_power_plot"),
-                        title="Desity Plot",solidHeader=TRUE,
+                        title="Power Prior Density Plot",solidHeader=TRUE,
                         collapsible=TRUE,status="primary")
                 ),
 
@@ -156,7 +156,13 @@ dashboardPage(
                                      label="Observed TRT Mean",
                                      value=-2.0,step=0.1,min=-100,max=100),
                         numericInput("obs_trt_sd",label="Observed TRT SD",
-                                     value=3.5,step=0.1,min=0,max=1000)
+                                     value=3.5,step=0.1,min=0,max=1000),
+                        numericInput("pwr_y",label="Power Y-position",
+                                     value=1.5, step=0.1,
+                                     min=-1000,max=1000),
+                        numericInput("pwr_x",label="Power X-position",
+                                     value=0.0, step=0.1,
+                                     min=-1000,max=1000)
                         
                         ),
                     box(
@@ -184,9 +190,9 @@ dashboardPage(
                                      label="Mean Control Group",value=0.0,step=0.1,
                                      min=-1000,max=1000),
                         numericInput("base_sd_control",label="SD Control Group",
-                                     value=1.0,step=0.1,min=-1000,max=1000),
+                                     value=6,step=0.1,min=-1000,max=1000),
                         numericInput("base_sd_trt",label="SD Treatment Group",
-                                     value=1.0,step=0.1,min=-1000,max=1000),
+                                     value=6,step=0.1,min=-1000,max=1000),
                         numericInput("base_mn_trt_lb",
                                      label="Lower Bound of Mean Treatment Group",
                                      value=-3.0,step=0.1,min=-1000,max=1000),
