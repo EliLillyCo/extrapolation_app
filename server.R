@@ -89,6 +89,79 @@ shinyServer(function(input,output,clientData, session){
                  manualColumnResize=TRUE)
 
     })
+    
+    output$prior2post_text <- renderUI({
+      n <- c(input$design_n_control,input$design_n_trt)
+      
+      mn1 <- input$prior_mix_mean1
+      sd1 <- input$prior_mix_sd1
+      mn2 <- input$prior_mix_mean2
+      sd2 <- input$prior_mix_sd2
+      mix <- input$prior_mix_weight1
+      
+      dnorm_c <- function(x) mix*dnorm(x,mn1,sd1)+(1-mix)*dnorm(x,mn2,sd2)
+      xvalues <- data.frame(x=c(min(mn1-3*sd1,mn2-3*sd2),
+                                max(mn1+3*sd1,mn2+3*sd2)))
+      ##fake data
+      
+      obs_mn1 <- input$obs_control_mean
+      obs_sd1 <- input$obs_control_sd
+      obs_mn2 <- input$obs_trt_mean
+      obs_sd2 <- input$obs_trt_sd
+      
+      s2 <- c(obs_sd1^2,obs_sd2^2)
+      ybar <-c(obs_mn1,obs_mn2)
+      
+      m0 <- marginal(ybar,s2,c(0,mn1),
+                     c(100,sd1),n,sigma=sqrt(s2),log=TRUE)
+      m1 <- marginal(ybar,s2,c(0,mn2),
+                     c(100,sd2),n,sigma=sqrt(s2),log=TRUE)
+      max_m <- max(m0,m1)
+      m0 <- exp(m0-max_m)
+      m1 <- exp(m1-max_m)
+      ybar <- c(ybar[1], ybar[2]-ybar[1])
+      p <- mix*m0/(mix*m0+(1-mix)*m1)
+      p <- c(p,1-p)
+      
+      post_var <- c(1.0/(1.0/sd1^2+n[2]/(2.0*s2[2])),
+                    1.0/(1.0/sd2^2+n[2]/(2.0*s2[2])))
+      
+      post_mn <- c(post_var[1]*((1.0/sd1^2)*mn1 +
+                                  (n[2]/(2.0*s2[2]))*ybar[2]),
+                   post_var[2]*((1.0/sd2^2)*mn2 +
+                                  (n[2]/(2.0*s2[2]))*ybar[2]))
+      
+      dnorm_pc <- function(x) p[1]*dnorm(x,post_mn[1],sqrt(post_var[1]))+
+        p[2]*dnorm(x,post_mn[2],sqrt(post_var[2]))
+      pp_a0 <- input$prior_power_a0
+      pp_mn <- input$prior_power_mean
+      pp_sd <- input$prior_power_sd/sqrt(pp_a0)
+      pp_post_var <- 1.0/(1.0/pp_sd^2+n[2]/(2.0*s2[2]))
+      pp_post_mn <- pp_post_var[1]*((1.0/pp_sd^2)*pp_mn +
+                                      (n[2]/(2.0*s2[2]))*ybar[2])
+      dnorm_pwrp <- function(x) dnorm(x,pp_mn,pp_sd/sqrt(pp_a0))
+      dnorm_pwr <- function(x) dnorm(x,pp_post_mn,sqrt(pp_post_var/pp_a0))
+      
+      txt <- tagList(
+        h4(paste0("Mix: P(TRT-Control<0|data)=",
+                 round(p[1]*pnorm(input$design_csf_eoi,post_mn[1],
+                                  sqrt(post_var[1]))+
+                         p[2]*pnorm(input$design_csf_eoi,post_mn[2],
+                                    sqrt(post_var[2])),3))),
+        h4(paste0("Power: P(TRT-Control<0|data)=",
+                 round(pnorm(input$design_csf_eoi,pp_post_mn,
+                             sqrt(pp_post_var)),3))))
+      # return(txt)
+      # txt <- paste0("Mix: P(TRT-Control<0|data)=",
+      #               round(p[1]*pnorm(input$design_csf_eoi,post_mn[1],
+      #                                sqrt(post_var[1]))+
+      #                       p[2]*pnorm(input$design_csf_eoi,post_mn[2],
+      #                                  sqrt(post_var[2])),3),"\n",
+      #               "Power: P(TRT-Control<0|data)=",
+      #               round(pnorm(input$design_csf_eoi,pp_post_mn,
+      #                           sqrt(pp_post_var)),3))
+      return(txt)
+    })
 
     output$prior2post_mix <- renderPlotly({
         n <- c(input$design_n_control,input$design_n_trt)
@@ -172,9 +245,9 @@ shinyServer(function(input,output,clientData, session){
 #            geom_vline(xintercept=ybar[2],colour="red")+
             labs(x="Treatment Difference", y="Density")+
             scale_fill_manual("Distribution",
-                              values=c("yellow","turquoise","purple","orange"))+
+                              values=c("yellow","turquoise","purple","orange"))
 ##            annotation_custom(grob)
-        annotate("text",x=input$pwr_x,y=input$pwr_y,label=txt)
+#        annotate("text",x=input$pwr_x,y=input$pwr_y,label=txt)
         
     })
 
