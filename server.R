@@ -50,8 +50,13 @@ n_cores <- 6
 ### Code: 
 shinyServer(function(input,output,clientData, session){
 
-    sim_results <- list()
-    sims <- NULL
+  # reactive values for simulation results  
+  sim_results <- reactiveVal(NULL)
+  sim_grid_results <- reactiveVal(NULL)
+  
+  # reactive values for sim button triggers
+  sim_button_trigger <- reactiveVal(runif(1))
+  sim_grid_button_trigger <- reactiveVal(runif(1))
     
     output$hot_scenarios <- renderRHandsontable({
         df <- data.frame("ScenarioName"=c("Null", "Null SD=2", "Expected",
@@ -217,51 +222,75 @@ shinyServer(function(input,output,clientData, session){
         withMathJax(paste0("P(TRT-Control < ",input$design_csf_eoi,")>",input$design_csf_prth))
     })
 
-    ##Simulations
-    sims <- reactive({
-        input$sim_go
-        set.seed(input$sim_seed)
-        n_sims <- input$sim_n
-        n <- c(input$design_n_control, input$design_n_trt)
-        hot <- isolate(input$hot_scenarios)
-        if(!is.null(hot)){
-            scenarios <- hot_to_r(input$hot_scenarios)
-            
-            parallel::mclapply(1:dim(scenarios)[1],function(x)
-                simulate_studies(n_sims,
-                                 mu=c(scenarios$ControlMean[x],
-                                             scenarios$TRTMean[x]),
-                                 sigma=c(scenarios$ControlSD[x],
-                                         scenarios$TRTSD[x]),n),
-                mc.cores = n_cores)
-        }else{
-            NULL
-        }
+    # Perform simulations informing power by scenario
+    observeEvent(input$sim_go, {
+      message("entered sims reactive")
+      set.seed(input$sim_seed)
+      n_sims <- input$sim_n
+      n <- c(input$design_n_control, input$design_n_trt)
+      hot <- isolate(input$hot_scenarios)
+      if(!is.null(hot)){
+        scenarios <- hot_to_r(input$hot_scenarios)
         
-    })
+        res <- parallel::mclapply(1:dim(scenarios)[1],function(x)
+          simulate_studies(n_sims,
+                           mu=c(scenarios$ControlMean[x],
+                                scenarios$TRTMean[x]),
+                           sigma=c(scenarios$ControlSD[x],
+                                   scenarios$TRTSD[x]),n),
+          mc.cores = n_cores)
+        sim_results(res)
+      }else{
+        sim_results(NULL)
+      }
 
-    sims_grid <- reactive({
-        input$sim_go
-        set.seed(input$sim_seed)
-        n_sims <- input$sim_n
-        n <- c(input$design_n_control, input$design_n_trt)
-        sd0 <- input$base_sd_control
-        mn0 <- input$base_mn_control
-        sd1 <- input$base_sd_trt
-        mn1 <- seq(input$base_mn_trt_lb,
-                   input$base_mn_trt_ub,
-                   input$base_mn_trt_by)
-        parallel::mclapply(mn1, function(x)
-            simulate_studies(n_sims,
-                             mu=c(mn0,x),
-                             sigma=c(sd0,sd1),n),
-            mc.cores = n_cores
-            )
     })
+    
+    # Perform simulations informing power curve output
+    observeEvent(input$sim_grid_go, {
+      set.seed(input$sim_seed)
+      n_sims <- input$sim_n
+      n <- c(input$design_n_control, input$design_n_trt)
+      sd0 <- input$base_sd_control
+      mn0 <- input$base_mn_control
+      sd1 <- input$base_sd_trt
+      mn1 <- seq(input$base_mn_trt_lb,
+                 input$base_mn_trt_ub,
+                 input$base_mn_trt_by)
+      res <- parallel::mclapply(mn1, function(x)
+        simulate_studies(n_sims,
+                         mu=c(mn0,x),
+                         sigma=c(sd0,sd1),n),
+        mc.cores = n_cores
+      )
+      sim_grid_results(res)
+    })
+    
+    # sims_grid <- reactive({
+    #     input$sim_go
+    #     set.seed(input$sim_seed)
+    #     n_sims <- input$sim_n
+    #     n <- c(input$design_n_control, input$design_n_trt)
+    #     sd0 <- input$base_sd_control
+    #     mn0 <- input$base_mn_control
+    #     sd1 <- input$base_sd_trt
+    #     mn1 <- seq(input$base_mn_trt_lb,
+    #                input$base_mn_trt_ub,
+    #                input$base_mn_trt_by)
+    #     parallel::mclapply(mn1, function(x)
+    #         simulate_studies(n_sims,
+    #                          mu=c(mn0,x),
+    #                          sigma=c(sd0,sd1),n),
+    #         mc.cores = n_cores
+    #         )
+    # })
     
     
     prbs <- reactive({
-        sms <- sims()
+      validate(
+        need(!is.null(sim_results()), "Please run simulations")
+      )
+        sms <- sim_results()
         eoi <- input$design_csf_eoi
         prth <- input$design_csf_prth
         n <- c(input$design_n_control, input$design_n_trt)
@@ -287,7 +316,10 @@ shinyServer(function(input,output,clientData, session){
 
 
     prbs_grid <- reactive({
-        sms <- sims_grid()
+      validate(
+        need(!is.null(sim_grid_results()), "Please run simulations")
+      )
+        sms <- sim_grid_results()
         eoi <- input$design_csf_eoi
         prth <- input$design_csf_prth
         n <- c(input$design_n_control, input$design_n_trt)
@@ -311,6 +343,7 @@ shinyServer(function(input,output,clientData, session){
     })
 
     prbs_df <- reactive({
+      req(prbs())
         prb <- prbs()
         scenarios <- hot_to_r(input$hot_scenarios)
         scen_names <- scenarios$ScenarioName        
@@ -324,10 +357,20 @@ shinyServer(function(input,output,clientData, session){
 
     
     prbs_df_grid<- reactive({
+      req(prbs_grid())
+      req(isTruthy(input$base_mn_trt_lb))
+      req(isTruthy(input$base_mn_trt_ub))
+      req(isTruthy(input$base_mn_trt_by))
+      scen_names <- seq(input$base_mn_trt_lb,
+                        input$base_mn_trt_ub,
+                        input$base_mn_trt_by)
+      # tell user to click the sims button again if any of the base mean
+      # range numbers are changed by the user
+      validate(
+        need(length(unlist(prbs_grid())) == 4 * length(scen_names), "Please re-run simulations")
+      )
         prb <- prbs_grid()
-        scen_names <- seq(input$base_mn_trt_lb,
-                   input$base_mn_trt_ub,
-                   input$base_mn_trt_by)
+        
         df <- data.frame("prcsf"=as.numeric(unlist(prb)),
                          "scenario"=as.numeric(rep(scen_names,each=4)),
                          "prior"=as.character(rep(c("flat","informative","power", "mix"),
@@ -336,6 +379,7 @@ shinyServer(function(input,output,clientData, session){
     })
     
     output$power_plot <- renderPlotly({
+      req(prbs_df())
         df <-  prbs_df()
         ggplot(data = df, aes(x = scenario, y = prcsf,colour=prior)) +
             geom_point() +
@@ -344,6 +388,7 @@ shinyServer(function(input,output,clientData, session){
     })
 
     output$power_plot_grid <- renderPlotly({
+      req(prbs_df_grid())
         df <-  prbs_df_grid()
         ggplot(data = df, aes(x = scenario, y = prcsf,colour=prior)) +
             geom_point()+geom_line()        
