@@ -265,6 +265,12 @@ Hash: 6853126283ff0572d9f370a1520ac831
 Requires: R6, crayon, digest, htmltools, httpuv, jsonlite, later, mime,
     promises, rlang, sourcetools, xtable
 
+Package: shinycssloaders
+Source: CRAN
+Version: 0.2.0
+Hash: a6b8033e66d69998a2b54059e6d53476
+Requires: digest, glue, shiny
+
 Package: shinydashboard
 Source: CRAN
 Version: 0.7.1

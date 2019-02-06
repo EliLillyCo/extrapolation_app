@@ -36,6 +36,7 @@
 ## 
 ### Libraries:
 library(shiny)
+library(shinycssloaders)
 library(ggplot2)
 library(plotly)
 library(shinydashboard)
@@ -119,7 +120,7 @@ dashboardPage(
                                               value=0.275,min=0.0,step=0.1,max=100))
                         )
                     ),
-                    box(plotOutput("prior_mix_plot"),
+                    box(withSpinner(plotOutput("prior_mix_plot")),
                         title="Mixture Prior Density Plot",solidHeader=TRUE,
                         collapsible=TRUE,status="primary")
                 ),
@@ -136,7 +137,7 @@ dashboardPage(
                                      "Power Prior Standard Deviation",
                                      value=0.275,min=0.0,step=0.1,max=1000)
                     ),
-                    box(plotOutput("prior_power_plot"),
+                    box(withSpinner(plotOutput("prior_power_plot")),
                         title="Power Prior Density Plot",solidHeader=TRUE,
                         collapsible=TRUE,status="primary")
                 ),
@@ -166,7 +167,8 @@ dashboardPage(
                         
                         ),
                     box(
-                        plotlyOutput("prior2post_mix"),
+                      htmlOutput("prior2post_text"),
+                        withSpinner(plotlyOutput("prior2post_mix")),
                         title="Prior to Posterior Plots",solidHeader=TRUE,
                         collapsible=TRUE,status="primary"
                     )
@@ -182,7 +184,7 @@ dashboardPage(
                         numericInput("sim_n",label="Number of Simulations",value=100,step=1),
                         actionButton("sim_go",label="Run Simulations!")
                     ),
-                    box(plotlyOutput("power_plot"),title="Power By Scenario",solidHeader=TRUE,
+                    box(withSpinner(plotlyOutput("power_plot")),title="Power By Scenario",solidHeader=TRUE,
                         collapsible=TRUE,status="primary")
                 ),
                 fluidRow(
@@ -205,7 +207,7 @@ dashboardPage(
                         actionButton("sim_grid_go",label="Run Simulations!"),
                         title="Power Curve Settings",solidHeader=TRUE,
                         collapsible=TRUE,status="primary"),
-                    box(plotlyOutput("power_plot_grid"),title="Power Curve",solidHeader=TRUE,
+                    box(withSpinner(plotlyOutput("power_plot_grid")),title="Power Curve",solidHeader=TRUE,
                         collapsible=TRUE,status="primary")
                 )
                 
