@@ -202,6 +202,7 @@ dashboardPage(
                         numericInput("base_mn_trt_by",
                                      label="Step Size of Mean Treatment Group",
                                      value=0.1,step=0.1,min=-1000,max=1000),
+                        actionButton("sim_grid_go",label="Run Simulations!"),
                         title="Power Curve Settings",solidHeader=TRUE,
                         collapsible=TRUE,status="primary"),
                     box(plotlyOutput("power_plot_grid"),title="Power Curve",solidHeader=TRUE,
