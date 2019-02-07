@@ -101,26 +101,27 @@ dashboardPage(
                 fluidRow(
                     box(title="Two Component Mixture Prior",solidHeader=TRUE,
                         collapsible=TRUE,status="primary",
+                        uiOutput("mixture_prior"),
                         fluidRow(
                             column(6,numericInput("prior_mix_weight1",
-                                                  "Mixture Prior Weight",
+                                                  "Mixture Prior Weight (p)",
                                                   value=0.5,min=0.0,max=1.0,
                                                   step=0.1))
                         ),
                         fluidRow(
                         column(6,numericInput("prior_mix_mean1",
-                                              "Mixture Prior Mean of Skeptical",
+                                              "Mixture Prior Mean of Skeptical (m0)",
                                               value=0.0,step=0.1,min=-100,max=100)),
                         column(6,numericInput("prior_mix_mean2",
-                                              "Mixture Prior Mean of Informative",
+                                              "Mixture Prior Mean of Informative (m1)",
                                               value=-2.0,step=0.1,min=-100,max=100))
                         ),
                         fluidRow(
                         column(6,numericInput("prior_mix_sd1",
-                                              "Mixture Prior SD of Skeptical",
+                                              "Mixture Prior SD of Skeptical (s0)",
                                               value=3.0,min=0.0,step=0.1,max=100)),
                         column(6,numericInput("prior_mix_sd2",
-                                              "Mixture Prior SD of Informative",
+                                              "Mixture Prior SD of Informative (s1)",
                                               value=0.275,min=0.0,step=0.1,max=100))
                         )
                     ),
@@ -132,13 +133,14 @@ dashboardPage(
                     box(tabName="Power Priors",title="Power Prior",
                         solidHeader=TRUE,
                         collapsible=TRUE,status="primary",
+                        uiOutput("power_prior"),
                         numericInput("prior_power_a0",
                                      "Power Prior Discounting Parameter (a0)",
                                      value=0.04,min=0.0,max=1.0,step=0.1),
-                        numericInput("prior_power_mean","Power Prior Mean",
+                        numericInput("prior_power_mean","Power Prior Mean (m)",
                                      value=-1.97,step=0.1,min=-1000,max=1000),
                         numericInput("prior_power_sd", ## add plot without discount
-                                     "Power Prior Standard Deviation",
+                                     "Power Prior Standard Deviation (s)",
                                      value=0.275,min=0.0,step=0.1,max=1000)
                     ),
                     box(withSpinner(plotOutput("prior_power_plot")),

@@ -151,15 +151,6 @@ shinyServer(function(input,output,clientData, session){
         h4(paste0("Power: P(TRT-Control<0|data)=",
                  round(pnorm(input$design_csf_eoi,pp_post_mn,
                              sqrt(pp_post_var)),3))))
-      # return(txt)
-      # txt <- paste0("Mix: P(TRT-Control<0|data)=",
-      #               round(p[1]*pnorm(input$design_csf_eoi,post_mn[1],
-      #                                sqrt(post_var[1]))+
-      #                       p[2]*pnorm(input$design_csf_eoi,post_mn[2],
-      #                                  sqrt(post_var[2])),3),"\n",
-      #               "Power: P(TRT-Control<0|data)=",
-      #               round(pnorm(input$design_csf_eoi,pp_post_mn,
-      #                           sqrt(pp_post_var)),3))
       return(txt)
     })
 
@@ -291,14 +282,25 @@ shinyServer(function(input,output,clientData, session){
             labs(x="Treatment Difference", y="Density")+
             annotation_custom(grob)
     })
+
     output$design_csf <- renderUI({
         withMathJax(paste0("$$P(\\mu_t-\\mu_c < ",input$design_csf_eoi,")>",input$design_csf_prth,"$$"))
     })
 
     output$model <- renderUI({
         withMathJax(paste0("$$y_{ic} | \\mu_c, \\sigma_c^2 \\sim N(\\mu_c, \\sigma_c^2), \\text{for } i=1,2,\\ldots, n_c$$","\n",
-        "$$y_{it} | \\mu_t, \\sigma_c^2 \\sim N(\\mu_t, \\sigma_t^2), \\text{for } i=1,2,\\ldots, n_t$$"))
+                           "$$y_{it} | \\mu_t, \\sigma_c^2 \\sim N(\\mu_t, \\sigma_t^2), \\text{for } i=1,2,\\ldots, n_t$$", "\n",
+                           "$$\\text{We reparameterize in terms of the treatment difference :}$$ \n $$\\delta=\\mu_t-\\mu_c$$"))
         
+    })
+
+    output$power_prior <- renderUI({
+        withMathJax(paste0("$$","\\pi(\\delta)= \\phi\\left(\\frac{\\delta-m}{s}\\right)^{a_0}","$$", "\n", "$$\\pi(\\mu_c, \\sigma^2_c, \\sigma^2_t) \\propto \\frac{1}{\\sigma_c\\sigma_t} $$"))
+    })
+
+    
+    output$mixture_prior <- renderUI({
+        withMathJax(paste0("$$","\\pi(\\delta)= p\\phi\\left(\\frac{\\delta-m_0}{s_0}\\right) + (1-p)\\phi\\left(\\frac{\\delta-m_1}{s_1}\\right) ","$$", "\n", "$$\\pi(\\mu_c, \\sigma^2_c, \\sigma^2_t) \\propto \\frac{1}{\\sigma_c\\sigma_t} $$"))
     })
 
     # Perform simulations informing power by scenario
