@@ -281,19 +281,32 @@ main <- function(){
 
     ##jondavid example
     
-    sims <- simulate_studies(n_sims=1000,mu=c(0,-0.5),sigma=c(3,3),n=c(150,150))
+
+    sims <- simulate_studies(n_sims=1000,mu=c(0,-0.7),sigma=c(3.5,3.5),n=c(150,150))
     fit_mix(0.5,
             sims,n=c(150,150),
             eoi=0,prth=0.975,
             mu0=c(0,0),
-            sigma0=c(100,10),
+            sigma0=c(10,3),
             mu1=c(0,-1.97),
-            sigma1=c(100,0.33))
+            sigma1=c(10,0.275))
     
     fit_flat(sims,n=c(150,150),eoi=0,prth=0.975)
+    fit_inf(sims,n,eoi=0.0,prth=0.975,0.0,1000.0)
+
+    sims1 <- list(sims_ybar=cbind(c(0,0),c(-.7,-.7)),
+                  sims_s2=cbind(c(3.5,3.5)^2,c(3.5,3.5)^2))
+
+    fit_mix(0.5,
+            sims1,n=c(150,150),
+            eoi=0,prth=0.975,
+            mu0=c(0,0),
+            sigma0=c(100,1),
+            mu1=c(0,-1.97),
+            sigma1=c(100,0.275))
     
     fit_inf(sims,n,eoi,prth,0.0,10.0)
-    fit_inf(sims,n,eoi,prth,4.0,1.0)
+    fit_inf(sims,n,eoi,prth,-4.0,1.0)
     
     
     
