@@ -284,23 +284,34 @@ shinyServer(function(input,output,clientData, session){
     })
 
     output$design_csf <- renderUI({
+      tags$div(
+        style = "font-size: 133%;",
         withMathJax(paste0("$$P(\\mu_t-\\mu_c < ",input$design_csf_eoi,")>",input$design_csf_prth,"$$"))
+      )
     })
 
     output$model <- renderUI({
+      tags$div(
+        style = "font-size: 133%;",
         withMathJax(paste0("$$y_{ic} | \\mu_c, \\sigma_c^2 \\sim N(\\mu_c, \\sigma_c^2), \\text{for } i=1,2,\\ldots, n_c$$","\n",
                            "$$y_{it} | \\mu_t, \\sigma_c^2 \\sim N(\\mu_t, \\sigma_t^2), \\text{for } i=1,2,\\ldots, n_t$$", "\n",
                            "$$\\text{We reparameterize in terms of the treatment difference :}$$ \n $$\\delta=\\mu_t-\\mu_c$$"))
-        
+      )
     })
 
     output$power_prior <- renderUI({
+      tags$div(
+        style = "font-size: 133%;",
         withMathJax(paste0("$$","\\pi(\\delta)= \\phi\\left(\\frac{\\delta-m}{s}\\right)^{a_0}","$$", "\n", "$$\\pi(\\mu_c, \\sigma^2_c, \\sigma^2_t) \\propto \\frac{1}{\\sigma_c\\sigma_t} $$"))
+      )
     })
 
     
     output$mixture_prior <- renderUI({
+      tags$div(
+        style = "font-size: 133%;",
         withMathJax(paste0("$$","\\pi(\\delta)= p\\phi\\left(\\frac{\\delta-m_0}{s_0}\\right) + (1-p)\\phi\\left(\\frac{\\delta-m_1}{s_1}\\right) ","$$", "\n", "$$\\pi(\\mu_c, \\sigma^2_c, \\sigma^2_t) \\propto \\frac{1}{\\sigma_c\\sigma_t} $$"))
+      )
     })
 
     # Perform simulations informing power by scenario
