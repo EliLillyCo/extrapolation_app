@@ -67,12 +67,16 @@ dashboardPage(
         tabItems(
             tabItem(tabName="tab_scenarios",
                 fluidRow(
-                    box(tabName="Design",title="Sample Sizes",solidHeader=TRUE,
-                        collapsible=TRUE,status="primary",
+                        
+                    box(tabName="Design",title="Sample Sizes",
+                        solidHeader=TRUE,
+                        collapsible=TRUE,
+                        status="primary",
                         numericInput("design_n_control","Sample Size for Control",
                                      value=150,min=0,max=10000,step=1),
                         numericInput("design_n_trt","Sample Size for TRT",
-                                     value=150,min=0,max=10000,step=1)
+                                     value=150,min=0,max=10000,step=1),
+                        uiOutput("model")
                     ),
                     box(tabName="Success Criterion",title="Success Criterion",
                         solidHeader=TRUE,

@@ -211,7 +211,13 @@ shinyServer(function(input,output,clientData, session){
             annotation_custom(grob)
     })
     output$design_csf <- renderUI({
-        withMathJax(paste0("P(TRT-Control < ",input$design_csf_eoi,")>",input$design_csf_prth))
+        withMathJax(paste0("$$P(\\mu_t-\\mu_c < ",input$design_csf_eoi,")>",input$design_csf_prth,"$$"))
+    })
+
+    output$model <- renderUI({
+        withMathJax(paste0("$$y_{ic} | \\mu_c, \\sigma_c^2 \\sim N(\\mu_c, \\sigma_c^2), \\text{for } i=1,2,\\ldots, n_c$$","\n",
+        "$$y_{it} | \\mu_t, \\sigma_c^2 \\sim N(\\mu_t, \\sigma_t^2), \\text{for } i=1,2,\\ldots, n_t$$"))
+        
     })
 
     ##Simulations
