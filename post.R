@@ -1,50 +1,3 @@
-#!/lrlhps/apps/R/qualified/R-3.4.0/bin/Rscript 
-### post.R --- 
-## 
-## Filename: post.R
-## Description: 
-## Author: Michael D Sonksen
-## Maintainer: 
-## License: This is owned by Eli Lilly and Company
-## Created: Mon Jan 21 20:09:17 2019 (-0500)
-## Version: 
-## Package-Requires: ()
-## Last-Updated: 
-##           By: 
-##     Update #: 0
-## URL: 
-## Doc URL: 
-## Keywords: 
-## Compatibility: 
-## 
-######################################################################
-## 
-### Commentary: 
-## 
-## 
-## 
-######################################################################
-## 
-### Change Log:
-## 
-## 
-######################################################################
-## 
-## 
-## 
-######################################################################
-## 
-### Libraries:
-
-
-## 
-### Global Functions: 
-
-
-## 
-### Code: 
-
-
 #' Simulate sufficient statistics from two independent normal distributions.  
 #'
 #' @param n_sims number of sets of samples to return.
@@ -240,15 +193,10 @@ fit_mix <- function(p0,sims,n,eoi,prth,
                           lower.tail=lower.tail)
     prb <- p[,1]*(prb1)+
            p[,2]*(prb2)
-    ##c(mean(prb1>prth),mean(prb2>prth),mean(prb>prth))
     c(mean(prb),mean(prb>prth))
 }
 
-
-
 #' Simple function for running the model fitting functions alone. 
-#'
-#' 
 main <- function(){
     n_sims <- 1000
     mu <- c(0.0,-1.0)
@@ -275,12 +223,6 @@ main <- function(){
     fit_mix(0.25,sims,n,eoi,prth,mu0,sigma0,mu1,sigma1)
     fit_mix(0.5,sims,n,eoi,prth,mu0,sigma0,mu1,sigma1)
     system.time(fit_mix(0.75,sims,n,eoi,prth,mu0,sigma0,mu1,sigma1))
-##   user  system elapsed 
-##  2.099   0.284   2.383
-
-
-    ##jondavid example
-    
 
     sims <- simulate_studies(n_sims=1000,mu=c(0,-0.7),sigma=c(3.5,3.5),n=c(150,150))
     fit_mix(0.5,
@@ -307,8 +249,6 @@ main <- function(){
     
     fit_inf(sims,n,eoi,prth,0.0,10.0)
     fit_inf(sims,n,eoi,prth,-4.0,1.0)
-    
-    
     
     ybar <- c(1,10)
     s2 <- c(4,4)
@@ -337,7 +277,3 @@ main <- function(){
     mean(Y[X[,2]==0])
     mean(Y[X[,2]==1])-mean(Y[X[,2]==0])
 }
-
-
-######################################################################
-### post.R ends here
