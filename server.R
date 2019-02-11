@@ -25,10 +25,10 @@ shinyServer(function(input,output,clientData, session) {
   output$hot_scenarios <- renderRHandsontable({
       df <- data.frame("ScenarioName"=c("1.) Null", "2.) OK", "3.) Good",
                                 "4.) Great"),
-                       "ControlMean"=c( 0.0, 0.0, 0.0, 0.0),
-                       "ControlSD"=  c( 6.0, 6.0, 6.0, 6.0),
-                       "TRTMean"=    c( 0.0, 1.0,-1.5,-2.0),
-                       "TRTSD"=      c( 6.0, 6.0, 6.0, 6.0))
+                       "ControlMean"=c( 0.0,  0.0, 0.0, 0.0),
+                       "ControlSD"=  c( 6.0,  6.0, 6.0, 6.0),
+                       "TRTMean"=    c( 0.0, -1.0,-1.5,-2.0),
+                       "TRTSD"=      c( 6.0,  6.0, 6.0, 6.0))
       rhandsontable(df, useTypes=FALSE,height=300*2,
                   search=TRUE) %>%
       hot_table(highlightCol=TRUE,highlightRow=TRUE) %>%
