@@ -240,7 +240,7 @@ gp=gpar(col="black", fontsize=13, fontface="italic")))
       
       ggplot(xvalues,aes(x=x))+
           stat_function(fun=dnorm_c, geom="area",fill="orange",alpha=.3)+
-          xlim(c(min(mn-11*sd,mn-11*sd),max(mn+11*sd,mn+11*sd)))+
+          xlim(c(min(mn-4*sd/sqrt(a0),mn-4*sd/sqrt(a0)),max(mn+4*sd/sqrt(a0),mn+4*sd/sqrt(a0))))+
           ##geom_vline(xintercept=input$eoi1,colour="red")+
           labs(x="Treatment Difference", y="Density")+
           annotation_custom(grob)
@@ -273,7 +273,7 @@ gp=gpar(col="black", fontsize=13, fontface="italic")))
   output$mixture_prior <- renderUI({
     tags$div(
       style = glue::glue("font-size: {math_fontpct}%;"),
-      withMathJax(paste0("$$","\\pi(\\delta)= p\\phi\\left(\\frac{\\delta-m_0}{s_0}\\right) + (1-p)\\phi\\left(\\frac{\\delta-m_1}{s_1}\\right) ","$$", "\n", "$$\\pi(\\mu_c, \\sigma^2_c, \\sigma^2_t) \\propto \\frac{1}{\\sigma_c\\sigma_t} $$"))
+      withMathJax(paste0("$$","\\pi(\\delta)= p\\phi\\left(\\frac{\\delta-m_0}{s_0}\\right) + (1-p)\\phi\\left(\\frac{\\delta-m_1}{s_1}\\right) ","$$", "\n", "$$\\pi(\\mu_c, \\sigma^2_c, \\sigma^2_t) \\propto \\frac{1}{\\sigma_c\\sigma_t} $$", "\n", "$$\\phi(x) = \\text{standard normal pdf}$$"))
     )
   })
 
