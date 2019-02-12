@@ -41,7 +41,7 @@ dashboardPage(
                 box(tabName="Success Criterion",title="Success Criterion",
                     solidHeader=TRUE,
                     collapsible=TRUE,status="primary",
-                    "P(TRT-Control<EOI)>PrTH) \n",
+                    "P(TRT-Control<EOI)>PrTH \n",
                     br(),
                     "EOI = Effect of Interest\n",
                     br(),
@@ -101,7 +101,7 @@ dashboardPage(
                                    "Power Prior Discounting Parameter (a0)",
                                    value=0.04,min=0.0,max=1.0,step=0.1),
                       numericInput("prior_power_mean","Power Prior Mean (m)",
-                                   value=-1.97,step=0.1,min=-1000,max=1000),
+                                   value=-2.0,step=0.1,min=-1000,max=1000),
                       numericInput("prior_power_sd", ## add plot without discount
                                    "Power Prior Standard Deviation (s)",
                                    value=0.275,min=0.0,step=0.1,max=1000)
